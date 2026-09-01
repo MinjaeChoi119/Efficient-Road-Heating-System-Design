@@ -4,7 +4,7 @@ Which heating-cable layout melts snow off a road for the least cable?
 
 Buried electric heating cable warms a road from underneath. Where you run the cable decides where the cold spots land, and cold spots are where snow survives. Four layouts get compared here in COMSOL: straight parallel runs, equilateral triangle, square, regular hexagon. Each one is packed tight enough that every point of the road surface reaches 4 °C, and then they're judged on how much cable that took per square metre.
 
-CAE coursework at Hanyang University, 2023. Two-person team project.
+CAE coursework at Hanyang University, 2023. Two-person team; I did the modelling and the analysis, my teammate put the slides together.
 
 ## Setup
 
@@ -29,11 +29,26 @@ Sources for those numbers: asphalt properties from the FHWA pavement thermal pag
 
 ## Method
 
-Each layout has one parameter that controls how tightly the cable is packed: spacing between runs for the straight pattern, side length for the other three.
+Each layout has one parameter that controls how tightly the cable is packed: spacing between runs for the straight pattern, side length for the other three. Call it *s*.
 
-Sweep it from 1.0 m down to 0.1 m and read the minimum surface temperature at each step. That brackets where the minimum crosses 4 °C. Then sweep the bracket in 0.01 m steps to land on the crossing.
+1. Coarse sweep, *s* = 1.0 m down to 0.1 m in 0.1 m steps, recording the minimum and maximum surface temperature at each step. This brackets the 0.1 m window where the minimum crosses 4 °C.
+2. Fine sweep of that window in 0.01 m steps.
+3. Fit a quadratic to minimum temperature against *s* over the fine sweep and solve it for 4 °C.
+4. Run the model once more at that exact *s* to check the fit landed where it should.
 
-At that critical value the pattern is divided into repeating cells, and the cable length inside one cell is divided by the cell area. That gives cable length per unit road area, which is the number the four layouts are compared on.
+<details>
+<summary>The fitted curves</summary>
+
+| Layout | Fit over the fine sweep | Solved at 4 °C |
+| --- | --- | --- |
+| Straight | y = 474.94s² − 220.55s + 25.173 | s = 0.1356 m |
+| Regular hexagon | y = 736.95s² − 315.49s + 31.882 | s = 0.1247 m |
+| Square | y = 212.94s² − 162.84s + 28.683 | s = 0.2083 m |
+| Equilateral triangle | y = 101.52s² − 118.69s + 32.365 | s = 0.3349 m |
+
+</details>
+
+Cable length per unit road area follows from dividing the pattern into repeating cells and dividing the cable inside one cell by the cell area. It comes out as a constant over *s*: 1 for straight runs, 2/√3 for the hexagon, 2 for the square, 2√3 for the triangle.
 
 ## Results
 
@@ -49,7 +64,7 @@ Surface temperature at each layout's critical spacing. Shared colour scale, −4
 
 <img src="temperature-legend.png" height="260">
 
-| Layout | Critical spacing / side | Min. surface temp there | Cable per unit area |
+| Layout | Critical *s* | Min. surface temp there | Cable per unit area |
 | --- | --- | --- | --- |
 | Straight | 0.1356 m | 3.94 °C | **7.37 m/m²** |
 | Regular hexagon | 0.1247 m | 4.01 °C | 9.26 m/m² |
@@ -58,15 +73,30 @@ Surface temperature at each layout's critical spacing. Shared colour scale, −4
 
 Straight parallel runs win, and not narrowly: 7.37 against 9.26, 9.60 and 10.34 m/m².
 
+<details>
+<summary>Coarse sweep, s = 1.0 m → 0.1 m</summary>
+
+| Straight | Equilateral triangle |
+| --- | --- |
+| ![](line-sweep.gif) | ![](triangle-sweep.gif) |
+
+| Square | Regular hexagon |
+| --- | --- |
+| ![](square-sweep.gif) | ![](hexagon-sweep.gif) |
+
+</details>
+
 One other thing came out of the sweeps. Minimum surface temperature rose with cable length per unit area at roughly the same slope for every layout, whatever the pattern shape. We left it there, but there's room to look into it.
 
-## The models
+## What's in here
 
-| File | Layout |
+| File | |
 | --- | --- |
-| `Line.mph` | Straight parallel runs |
-| `Triangle.mph` | Equilateral triangle |
-| `Square.mph` | Square |
-| `Hexagon.mph` | Regular hexagon |
+| `Line.mph` `Triangle.mph` `Square.mph` `Hexagon.mph` | The COMSOL models, one per layout |
+| `line-sweep.xlsx` and the other three | Coarse and fine sweeps for that layout, with the quadratic fit |
+| `sweep-summary.xlsx` | All four coarse sweeps side by side, with cable length per unit area |
+| `*-sweep.gif` | The coarse sweep as an animation |
+| `*-surface-temp.png` | Surface temperature at the critical spacing |
+| `CAE-presentation.pdf` | The course presentation the numbers above come from |
 
 COMSOL Multiphysics with the Heat Transfer module. Open a `.mph` directly: geometry, materials, boundary conditions and the study are all in the file.
